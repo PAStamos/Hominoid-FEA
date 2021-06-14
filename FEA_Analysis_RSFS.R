@@ -10,7 +10,7 @@ setwd("C:/Users/peter/Google Drive/R Files/FEA_Project")
 
 
 #read in data
-csv.data <- read.csv(file = "FEA_results.csv")
+csv.data <- read.csv(file = "FEA_results.csv", stringsAsFactors = TRUE)
 
 
 ##For Scaled_VM_stress_98 or Scaled_VM_stress_Mean
@@ -21,6 +21,8 @@ d.sub <- csv.data[is.na(csv.data$Scaled_VM_stress_Mean)==FALSE , ]
 
 ##4-way model
 d.sub$GenusLoco_index <-as.integer(d.sub$GenusLoco)
+
+
 
 #Rename column for ease of reference
 d.sub$ScaledVM <- d.sub$Scaled_VM_stress_98_to_UKEN_SC026
@@ -42,31 +44,35 @@ mstan.ScaledVM <- ulam(
   contro=list(adapt_delta = 0.99))
 
 labels <- paste("a[", 1:4, "]:" , levels(d.sub$GenusLoco) , sep="" )
+#labels without numbered prefix
+labels <- paste("" , levels(d.sub$GenusLoco) , sep="" )
 
-plot(precis(mstan.ScaledVM , depth=2 , digits = 3, prob=0.95, pars = "a") , labels=labels ,
-     xlab="Scaled Von Mises Stress")
+plot(precis(mstan.ScaledVM , depth=2 , digits = 3, prob=0.95, pars = "a") , labels=labels , pch = 16, col = col.alpha("blue",1.0),
+     xlab="Scaled von Mises stress")
+
+#postcheck(mstan.ScaledVM, prob = 0.95)
 
 #Contrasts between Homo and Pan
-poststan.ScaledVM <- extract.samples(mstan.ScaledVM , n=1e6)
-poststan.ScaledVM$diff_HCW <- poststan.ScaledVM$a[,1] - poststan.ScaledVM$a[,2]
-poststan.ScaledVM$ratio_HCW <- poststan.ScaledVM$a[,1] / poststan.ScaledVM$a[,2]
-poststan.ScaledVM$diff_PCW <- poststan.ScaledVM$a[,3] - poststan.ScaledVM$a[,4]
-poststan.ScaledVM$ratio_PCW <- poststan.ScaledVM$a[,3] / poststan.ScaledVM$a[,4]
-poststan.ScaledVM$diff_HPW <- poststan.ScaledVM$a[,2] - poststan.ScaledVM$a[,4]
-poststan.ScaledVM$ratio_HPW <- poststan.ScaledVM$a[,2] / poststan.ScaledVM$a[,4]
-poststan.ScaledVM$diff_HPC <- poststan.ScaledVM$a[,1] - poststan.ScaledVM$a[,3]
-poststan.ScaledVM$ratio_HPC <- poststan.ScaledVM$a[,1] / poststan.ScaledVM$a[,3]
+poststan.ScaledVM <- extract.samples(mstan.ScaledVM , n=1e7)
+poststan.ScaledVM$diff_HFE <- poststan.ScaledVM$a[,2] - poststan.ScaledVM$a[,1]
+poststan.ScaledVM$ratio_HFE <- poststan.ScaledVM$a[,2] / poststan.ScaledVM$a[,1]
+poststan.ScaledVM$diff_PFE <- poststan.ScaledVM$a[,4] - poststan.ScaledVM$a[,3]
+poststan.ScaledVM$ratio_PFE <- poststan.ScaledVM$a[,4] / poststan.ScaledVM$a[,3]
+poststan.ScaledVM$diff_HPE <- poststan.ScaledVM$a[,1] - poststan.ScaledVM$a[,3]
+poststan.ScaledVM$ratio_HPE <- poststan.ScaledVM$a[,1] / poststan.ScaledVM$a[,3]
+poststan.ScaledVM$diff_HPF <- poststan.ScaledVM$a[,2] - poststan.ScaledVM$a[,4]
+poststan.ScaledVM$ratio_HPF <- poststan.ScaledVM$a[,2] / poststan.ScaledVM$a[,4]
 precis(poststan.ScaledVM , depth=2 , digits = 3, prob=0.95)
 
-dens(poststan.ScaledVM$diff_HCW , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Homo Climb and Homo Walk
-dens(poststan.ScaledVM$diff_PCW , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Pan Climb and Pan Walk
-dens(poststan.ScaledVM$diff_HPW , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Homo Walk and Pan Walk
-dens(poststan.ScaledVM$diff_HPC , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Homo Climb and Pan Climb
+dens(poststan.ScaledVM$diff_HFE , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Homo Climb and Homo Walk
+dens(poststan.ScaledVM$diff_PFE , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Pan Climb and Pan Walk
+dens(poststan.ScaledVM$diff_HPE , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Homo Walk and Pan Walk
+dens(poststan.ScaledVM$diff_HPF , show.HPDI = 0.95 , show.zero = TRUE) #Difference between Homo Climb and Pan Climb
 
-dens(poststan.ScaledVM$ratio_HCW , show.HPDI = 0.95 , show.zero = TRUE)
-dens(poststan.ScaledVM$ratio_PCW , show.HPDI = 0.95 , show.zero = TRUE)
-dens(poststan.ScaledVM$ratio_HPW , show.HPDI = 0.95 , show.zero = TRUE)
-dens(poststan.ScaledVM$ratio_HPC , show.HPDI = 0.95 , show.zero = TRUE)
+dens(poststan.ScaledVM$ratio_HFE , show.HPDI = 0.95 , show.zero = TRUE)
+dens(poststan.ScaledVM$ratio_PFE , show.HPDI = 0.95 , show.zero = TRUE)
+dens(poststan.ScaledVM$ratio_HPE , show.HPDI = 0.95 , show.zero = TRUE)
+dens(poststan.ScaledVM$ratio_HPF , show.HPDI = 0.95 , show.zero = TRUE)
 
 
 
@@ -103,11 +109,18 @@ mstan.ariaDNE.climb <- ulam(
 
 precis(mstan.ariaDNE.climb , depth=2 , digits = 3, prob=0.95)
 
-#make figure
+##Make figures with shaded CI regions. Based on Edition 2 R code 4.57 and 4.58
+#ClimbMax
 poststan.mstan.ariaDNE.climb <- extract.samples(mstan.ariaDNE.climb, n=1e6)
-plot(ScaledVM_Max ~ ariaDNE_bw_10 ,  col = 'black', data=d.sub3.climb)
-for (i in 1:50)
-  abline(a=poststan.mstan.ariaDNE.climb$a[i], b=poststan.mstan.ariaDNE.climb$b[i], col=col.alpha("blue", 0.2))
+mu.link <- function(ariaDNE_bw_10) poststan.mstan.ariaDNE.climb$a +poststan.mstan.ariaDNE.climb$b*(ariaDNE_bw_10)
+ariaDNE.seq <- seq(from=0.01 , to=0.08, by=0.002)
+mu <- sapply (ariaDNE.seq, mu.link)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI , prob=0.95)
+
+plot(ScaledVM_Max ~ ariaDNE_bw_10, data=d.sub3.climb, col = 'black', lwd= 2, cex = 1.1, xlab = "ariaDNE", ylab = "scaled stress", main = "Flexed Maximum von Mises stress") 
+lines(ariaDNE.seq, mu.mean,col = 'black', lwd= 1, cex = 1,)
+shade(mu.PI, ariaDNE.seq, col = col.alpha("blue",0.20))
 
 
 ##ScaledVM_Mean
@@ -128,9 +141,15 @@ precis(mstan.ariaDNE.climb , depth=2 , digits = 3, prob=0.95)
 
 #make figure
 poststan.mstan.ariaDNE.climb <- extract.samples(mstan.ariaDNE.climb, n=1e6)
-plot(ScaledVM_Mean ~ ariaDNE_bw_10 ,  col = 'black', data=d.sub3.climb)
-for (i in 1:50)
-  abline(a=poststan.mstan.ariaDNE.climb$a[i], b=poststan.mstan.ariaDNE.climb$b[i], col=col.alpha("blue", 0.2))
+mu.link <- function(ariaDNE_bw_10) poststan.mstan.ariaDNE.climb$a +poststan.mstan.ariaDNE.climb$b*(ariaDNE_bw_10)
+ariaDNE.seq <- seq(from=0.01 , to=0.08, by=0.002)
+mu <- sapply (ariaDNE.seq, mu.link)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI , prob=0.95)
+
+plot(ScaledVM_Mean ~ ariaDNE_bw_10, data=d.sub3.climb, col = 'black', lwd= 2, cex = 1.1, xlab = "ariaDNE", ylab = "scaled stress", main = "Flexed Mean von Mises stress") 
+lines(ariaDNE.seq, mu.mean)
+shade(mu.PI, ariaDNE.seq, col = col.alpha("blue",0.20))
 
 
 
@@ -156,9 +175,15 @@ precis(mstan.ariaDNE.walk , depth=2 , digits = 3, prob=0.95)
 
 #make figure
 poststan.mstan.ariaDNE.walk <- extract.samples(mstan.ariaDNE.walk, n=1e6)
-plot(ScaledVM_Max ~ ariaDNE_bw_10 ,  col = 'black', data=d.sub3.walk)
-for (i in 1:50)
-  abline(a=poststan.mstan.ariaDNE.walk$a[i], b=poststan.mstan.ariaDNE.walk$b[i], col=col.alpha("blue", 0.2))
+mu.link <- function(ariaDNE_bw_10) poststan.mstan.ariaDNE.walk$a +poststan.mstan.ariaDNE.walk$b*(ariaDNE_bw_10)
+ariaDNE.seq <- seq(from=0.01 , to=0.08, by=0.002)
+mu <- sapply (ariaDNE.seq, mu.link)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI , prob=0.95)
+
+plot(ScaledVM_Max ~ ariaDNE_bw_10, data=d.sub3.walk, col = 'black', lwd= 2, cex = 1.1, xlab = "ariaDNE", ylab = "scaled stress", main = "Extended Maximum von Mises stress") 
+lines(ariaDNE.seq, mu.mean)
+shade(mu.PI, ariaDNE.seq, col = col.alpha("blue",0.20))
 
 #ScaledVM_Mean
 #Subset the data to only the parameters used in the model. Stan likes to throw errors otherwise
@@ -178,9 +203,19 @@ precis(mstan.ariaDNE.walk , depth=2 , digits = 3, prob=0.95)
 
 #make figure
 poststan.mstan.ariaDNE.walk <- extract.samples(mstan.ariaDNE.walk, n=1e6)
-plot(ScaledVM_Mean ~ ariaDNE_bw_10 ,  col = 'black', lwd= 2, cex = 1, data=d.sub3.walk)
-#plot MAP estimate in black
-abline(a=mean(poststan.mstan.ariaDNE.walk$a), b=mean(poststan.mstan.ariaDNE.walk$b), col=col.alpha("black", 1), lwd = 2)
-#plot more lines to approximate CIs
-for (i in 1:95)
-  abline(a=poststan.mstan.ariaDNE.walk$a[i], b=poststan.mstan.ariaDNE.walk$b[i], col=col.alpha("blue", 0.2))
+mu.link <- function(ariaDNE_bw_10) poststan.mstan.ariaDNE.walk$a +poststan.mstan.ariaDNE.walk$b*(ariaDNE_bw_10)
+ariaDNE.seq <- seq(from=0.01 , to=0.08, by=0.002)
+mu <- sapply (ariaDNE.seq, mu.link)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI , prob=0.95)
+
+plot(ScaledVM_Mean ~ ariaDNE_bw_10, data=d.sub3.walk, col = 'black', lwd= 2, cex = 1.1, xlab = "ariaDNE", ylab = "scaled stress", main = "Extended Mean von Mises stress") 
+lines(ariaDNE.seq, mu.mean)
+shade(mu.PI, ariaDNE.seq, col = col.alpha("blue",0.20))
+
+
+
+
+
+
+
